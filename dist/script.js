@@ -39,55 +39,29 @@ function toggleVideo() {
     }
 }
 
-const btnSelect = document.querySelector('.btn')
-const cursor = document.querySelector('#cursor')
-
+let faceDetected = false;
 
 function runDetection() {
     model.detect(video).then(predictions => {
-        // console.log("Predictions: ", predictions);
+        let currentFaceDetected = predictions.some(prediction => prediction.label === 'face');
+
+        if (currentFaceDetected && !faceDetected) {
+            console.log('visage détecté');
+            // Placez ici tout autre traitement à effectuer lors de la détection d'un nouveau visage
+        }
+        // si pas de visage détecté
+        // if (!currentFaceDetected && faceDetected) {
+        //     console.log('pas de visage détecté');
+        // }
+
+        faceDetected = currentFaceDetected;
         model.renderPredictions(predictions, canvas, context, video);
-
-        predictions.forEach(prediction => {
-            if (prediction.label !== 'face') { // Assurez-vous que la classe 'hand' est correcte
-                console.log(prediction)
-                const [x, y, width, height] = prediction.bbox;
-                console.log(`Main détectée à x: ${x}, y: ${y}, largeur: ${width}, hauteur: ${height}`);
-
-                moveCursor(prediction.bbox, cursor)
-                checkCollision(prediction)
-                
-            }
-        });
 
         if (isVideo) {
             requestAnimationFrame(runDetection);
         }
     });
 }
-
-function moveCursor(handBbox, cursor) {
-    // Récupère les dimensions du canvas et de la page web
-    const canvasWidth = canvas.offsetWidth;
-    const canvasHeight = canvas.offsetHeight;
-    const pageWidth = window.innerWidth;
-    const pageHeight = window.innerHeight;
-
-    // Calcule la position relative de la main dans le canvas
-    const [x, y, width, height] = handBbox;
-    const relativeX = (x + width / 2) / canvasWidth;
-    const relativeY = (y + height / 2) / canvasHeight;
-
-    // Adapte la position relative aux dimensions de la page web
-    const cursorX = relativeX * pageWidth;
-    const cursorY = relativeY * pageHeight;
-
-    // Positionne le curseur sur la page
-    cursor.style.left = `${cursorX}px`;
-    cursor.style.top = `${cursorY}px`;
-}
-
-
 
 // Load the model.
 handTrack.load(modelParams).then(lmodel => {
@@ -96,35 +70,3 @@ handTrack.load(modelParams).then(lmodel => {
     updateNote.innerText = "Loaded Model!"
     trackButton.disabled = false
 });
-
-
-
-function checkCollision(prediction) {
-    const cursorRect = cursor.getBoundingClientRect();
-    const btnRect = btnSelect.getBoundingClientRect();
-
-    // Vérifie si les rectangles se chevauchent
-    if (cursorRect.left < btnRect.right &&
-        cursorRect.right > btnRect.left &&
-        cursorRect.top < btnRect.bottom &&
-        cursorRect.bottom > btnRect.top) {
-        // Collision détectée, effectuez une action
-        console.log('Collision détectée!');
-        // Vous pouvez par exemple changer la couleur du bouton
-        
-        console.log("prediction : ", prediction.label)
-        if(prediction.label == 'open'){
-            btnSelect.style.backgroundColor = 'green';
-        }
-        else if(prediction.label == 'closed'){
-            btnSelect.style.backgroundColor ='red';
-        }
-        else{
-            btnSelect.style.backgroundColor = 'yellow';
-        }
-    } else {
-        // Pas de collision, réinitialisez l'état du bouton si nécessaire
-        btnSelect.style.backgroundColor = ''; // Réinitialise la couleur du fond
-    }
-}
-
